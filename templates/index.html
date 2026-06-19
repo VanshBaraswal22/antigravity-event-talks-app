@@ -29,6 +29,16 @@
             </div>
             
             <div class="controls-area">
+                <!-- Theme Toggle Switch -->
+                <div class="theme-switch-wrapper">
+                    <span class="theme-icon sun-icon">☀️</span>
+                    <label class="theme-switch" for="theme-checkbox">
+                        <input type="checkbox" id="theme-checkbox">
+                        <span class="theme-slider round"></span>
+                    </label>
+                    <span class="theme-icon moon-icon">🌙</span>
+                </div>
+
                 <button id="refresh-btn" class="btn btn-primary" title="Refresh Release Notes">
                     <span class="btn-icon">
                         <svg id="refresh-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -52,12 +62,20 @@
                         <input type="text" id="search-input" placeholder="Search release notes, features, issues...">
                     </div>
                     
-                    <div class="filter-group">
-                        <button class="filter-btn active" data-type="all">All</button>
-                        <button class="filter-btn" data-type="feature"><span class="badge badge-feature"></span>Feature</button>
-                        <button class="filter-btn" data-type="change"><span class="badge badge-change"></span>Change</button>
-                        <button class="filter-btn" data-type="announcement"><span class="badge badge-announcement"></span>Announcement</button>
-                        <button class="filter-btn" data-type="issue"><span class="badge badge-issue"></span>Issue</button>
+                    <div class="filter-group-wrapper">
+                        <div class="filter-group">
+                            <button class="filter-btn active" data-type="all">All</button>
+                            <button class="filter-btn" data-type="feature"><span class="badge badge-feature"></span>Feature</button>
+                            <button class="filter-btn" data-type="change"><span class="badge badge-change"></span>Change</button>
+                            <button class="filter-btn" data-type="announcement"><span class="badge badge-announcement"></span>Announcement</button>
+                            <button class="filter-btn" data-type="issue"><span class="badge badge-issue"></span>Issue</button>
+                        </div>
+                        <button id="export-csv-btn" class="btn btn-secondary btn-sm" title="Export Current List to CSV">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-small">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            <span>Export CSV</span>
+                        </button>
                     </div>
                 </div>
 

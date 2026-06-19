@@ -31,6 +31,8 @@ const detailLink = document.getElementById('detail-link');
 const tweetTextarea = document.getElementById('tweet-textarea');
 const charCounter = document.getElementById('char-counter');
 const tweetBtn = document.getElementById('tweet-btn');
+const themeCheckbox = document.getElementById('theme-checkbox');
+const exportCsvBtn = document.getElementById('export-csv-btn');
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,6 +73,12 @@ function setupEventListeners() {
     
     // Tweet button
     tweetBtn.addEventListener('click', handleTweetSubmit);
+    
+    // Theme Switch
+    initThemeSwitch();
+    
+    // Export CSV
+    exportCsvBtn.addEventListener('click', handleExportCSV);
 }
 
 // Fetch Releases from Flask API
@@ -158,13 +166,34 @@ function renderFeed() {
         card.innerHTML = `
             <div class="card-header">
                 <span class="card-date">${item.date}</span>
-                <span class="type-badge ${badgeClass}">${item.type}</span>
+                <div class="card-header-actions">
+                    <span class="type-badge ${badgeClass}">${item.type}</span>
+                    <button class="card-copy-btn" title="Copy to Clipboard">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <h3>${item.type} Release</h3>
                 <p>${escapeHTML(item.plain_text)}</p>
             </div>
         `;
+        
+        // Copy to clipboard button listener
+        const copyBtn = card.querySelector('.card-copy-btn');
+        copyBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent selecting the card
+            const textToCopy = `BigQuery Release (${item.date}) - [${item.type}]:\n${item.plain_text}\n\nLink: ${item.link}`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                copyBtn.classList.add('copied');
+                setTimeout(() => copyBtn.classList.remove('copied'), 1500);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
         
         card.addEventListener('click', () => selectRelease(item));
         releasesFeed.appendChild(card);
@@ -330,4 +359,82 @@ function escapeHTML(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// Theme Switcher Initialization
+function initThemeSwitch() {
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    
+    if (currentTheme === 'light') {
+        document.body.classList.add('light-theme');
+        themeCheckbox.checked = true;
+    } else {
+        document.body.classList.remove('light-theme');
+        themeCheckbox.checked = false;
+    }
+    
+    themeCheckbox.addEventListener('change', () => {
+        if (themeCheckbox.checked) {
+            document.body.classList.add('light-theme');
+            localStorage.setItem('theme', 'light');
+        } else {
+            document.body.classList.remove('light-theme');
+            localStorage.setItem('theme', 'dark');
+        }
+    });
+}
+
+// Export Filtered Releases to CSV
+function handleExportCSV() {
+    const filtered = state.releases.filter(item => {
+        const typeMatch = state.currentFilter === 'all' || 
+            item.type.toLowerCase() === state.currentFilter;
+        const textMatch = !state.searchQuery || 
+            item.type.toLowerCase().includes(state.searchQuery) ||
+            item.date.toLowerCase().includes(state.searchQuery) ||
+            item.plain_text.toLowerCase().includes(state.searchQuery);
+        return typeMatch && textMatch;
+    });
+    
+    if (filtered.length === 0) {
+        alert('No release notes to export.');
+        return;
+    }
+    
+    // Build CSV Content
+    const headers = ['Date', 'Type', 'Link', 'Plain Text Description'];
+    const rows = filtered.map(item => [
+        item.date,
+        item.type,
+        item.link,
+        item.plain_text
+    ]);
+    
+    function escapeCSV(val) {
+        if (val === null || val === undefined) return '';
+        let str = String(val);
+        str = str.replace(/"/g, '""'); // Escape double quotes
+        if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+            return `"${str}"`;
+        }
+        return str;
+    }
+    
+    const csvContent = [
+        headers.map(escapeCSV).join(','),
+        ...rows.map(row => row.map(escapeCSV).join(','))
+    ].join('\r\n');
+    
+    // Download Trigger
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const filterName = state.currentFilter !== 'all' ? `-${state.currentFilter}` : '';
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bigquery-releases${filterName}-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
